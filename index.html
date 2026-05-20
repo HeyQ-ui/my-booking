@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日期选择</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            min-width: 320px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+
+        .date-selector {
+            margin-bottom: 30px;
+        }
+
+            .date-selector label {
+                display: block;
+                margin-bottom: 10px;
+                color: #666;
+                font-size: 14px;
+            }
+
+        input[type="date"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            color: #333;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+            input[type="date"]:focus {
+                outline: none;
+                border-color: #667eea;
+            }
+
+        .enter-btn {
+            background: #006633;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+            .enter-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 20px rgba(0, 102, 51, 0.4);
+            }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>请选择预约日期</h1>
+        <div class="date-selector">
+            <label for="date-input">今日日期</label>
+            <input type="date" id="date-input">
+        </div>
+        <button class="enter-btn" onclick="enterBooking()">进入预约页面</button>
+    </div>
+
+    <script>
+        // 用本地时区的 YYYY-MM-DD，避免 valueAsDate 的 UTC 偏移坑
+        function todayLocalStr() {
+            const d = new Date();
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        const dateInput = document.getElementById('date-input');
+        dateInput.value = todayLocalStr();
+
+        function enterBooking() {
+            const selectedDate = dateInput.value;
+            if (!selectedDate) {
+                alert('请选择日期');
+                return;
+            }
+            window.location.href = `booking.html?date=${selectedDate}`;
+        }
+    </script>
+</body>
+</html>
