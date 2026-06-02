@@ -88,21 +88,16 @@
 
         // 保持 booking-id 原样不动
 
-        // 处理场地显示名称：东校园游泳池 → 东校游泳池，其他场馆去掉 "-场地1"
-        var displayVenue = venue;
-        if (venue === '东校园游泳池') {
-            displayVenue = '东校游泳池';
-        }
-
         // 更新 card-details
         var detailsDiv = card.querySelector('.card-details > div');
         if (detailsDiv) {
+            var locationText = venue === '东校园游泳池' ? venue : venue + '-场地1';
             detailsDiv.innerHTML = '<i aria-hidden="true" class="v-icon notranslate mr-2 mdi mdi-calendar theme--light" style="font-size:16px"></i> '
                 + formattedDate
                 + ' <i aria-hidden="true" class="v-icon notranslate ml-2 mr-1 mdi mdi-clock-outline theme--light" style="font-size:16px"></i> '
                 + time
                 + ' <i aria-hidden="true" class="v-icon notranslate ml-2 mr-1 mdi mdi-map-marker theme--light" style="font-size:16px"></i> '
-                + displayVenue;
+                + locationText;
         }
 
         // 保持状态标签原样不动
