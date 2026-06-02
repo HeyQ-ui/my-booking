@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>预约信息填写</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px 0;
+        }
+
+        .container {
+            background: white;
+            padding: 32px 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 90vw;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 24px;
+            font-size: 22px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        input[type="date"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            color: #333;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        input[type="date"]:focus {
+            outline: none;
+            border-color: #006633;
+        }
+
+        /* 折叠栏样式 */
+        .accordion {
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .accordion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            background: #fafafa;
+            cursor: pointer;
+            transition: background 0.2s;
+            user-select: none;
+        }
+
+        .accordion-header:hover {
+            background: #f0f0f0;
+        }
+
+        .accordion-header.active {
+            background: #e6f3ed;
+        }
+
+        .accordion-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .accordion-title .venue-count {
+            font-size: 12px;
+            font-weight: 400;
+            color: #888;
+            margin-left: 8px;
+        }
+
+        .accordion-arrow {
+            width: 20px;
+            height: 20px;
+            transition: transform 0.3s ease;
+            color: #666;
+        }
+
+        .accordion-header.active .accordion-arrow {
+            transform: rotate(180deg);
+            color: #006633;
+        }
+
+        .accordion-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            background: white;
+        }
+
+        .accordion-body.open {
+            max-height: 2000px;
+            padding: 16px 18px;
+        }
+
+        /* 场馆分组 */
+        .venue-group {
+            margin-bottom: 20px;
+        }
+
+        .venue-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .venue-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 10px;
+            padding-left: 2px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .venue-name::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background: #006633;
+            border-radius: 2px;
+        }
+
+        .session-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .session-card {
+            flex: 1 1 auto;
+            min-width: 130px;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.25s ease;
+            background: #fafafa;
+            font-size: 14px;
+            color: #333;
+            user-select: none;
+        }
+
+        .session-card:hover {
+            border-color: #006633;
+            background: #f0faf3;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 102, 51, 0.15);
+        }
+
+        .session-card.selected {
+            border-color: #006633;
+            background: #e6f3ed;
+            color: #004d26;
+            font-weight: 600;
+            box-shadow: 0 0 0 1px #006633;
+        }
+
+        .session-tag {
+            display: inline-block;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: #e0e0e0;
+            color: #666;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        .session-card.selected .session-tag {
+            background: #006633;
+            color: #fff;
+        }
+
+        /* 搜索框 */
+        .search-box {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #006633;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 28px;
+        }
+
+        .enter-btn {
+            background: #006633;
+            color: white;
+            border: none;
+            padding: 14px 48px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .enter-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 102, 51, 0.4);
+        }
+
+        .enter-btn:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 14px 24px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: #006633;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid #eee;
+            margin: 20px 0;
+        }
+
+        /* 已选信息展示 */
+        .selected-info {
+            background: #e6f3ed;
+            border: 1px solid #006633;
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #004d26;
+            display: none;
+        }
+
+        .selected-info.show {
+            display: block;
+        }
+
+        .selected-info strong {
+            color: #006633;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>填写预约信息</h1>
+
+        <div class="form-group">
+            <label for="date-input">预约日期</label>
+            <input type="date" id="date-input">
+        </div>
+
+        <div class="selected-info" id="selected-info">
+            已选择：<strong id="sel-venue"></strong> · <strong id="sel-time"></strong>
+        </div>
+
+        <hr class="divider">
+
+        <div class="form-group">
+            <label>选择场次</label>
+            <input type="text" class="search-box" id="venue-search" placeholder="搜索场馆名称...">
+            <div id="venue-list"></div>
+        </div>
+
+        <div class="btn-row">
+            <span class="back-link" onclick="goBack()">返回</span>
+            <button class="enter-btn" id="confirm-btn" disabled onclick="confirmBooking()">确认预约</button>
+        </div>
+    </div>
+
+    <script>
+        // === 场次数据（来自场馆预约信息.xlsx + 图片补充） ===
+        var sessions = [
+            // 南校园
+            { venue: "南校园新体育馆健身房", type: "周中", time: "18:00-20:00" },
+            { venue: "南校园新体育馆健身房", type: "周中", time: "20:00-22:00" },
+            { venue: "南校园新体育馆健身房", type: "周末", time: "10:00-12:00" },
+            { venue: "南校园新体育馆健身房", type: "周末", time: "14:00-16:00" },
+            { venue: "南校园新体育馆健身房", type: "周末", time: "16:00-18:00" },
+            { venue: "南校园新体育馆健身房", type: "周末", time: "18:00-20:00" },
+            { venue: "南校园新体育馆健身房", type: "周末", time: "20:00-22:00" },
+            { venue: "南校园游泳池", type: "周末/周中", time: "06:30-08:00" },
+            { venue: "南校园游泳池", type: "周末/周中", time: "16:30-18:00" },
+            { venue: "南校园游泳池", type: "周末/周中", time: "19:30-21:00" },
+            // 东校园
+            { venue: "东校园游泳池", type: "周末/周中", time: "06:30-08:00" },
+            { venue: "东校园游泳池", type: "周末/周中", time: "16:30-18:00" },
+            { venue: "东校园游泳池", type: "周末/周中", time: "19:30-21:00" },
+            { venue: "东校园健身房", type: "周末/周中", time: "08:00-09:00" },
+            { venue: "东校园健身房", type: "周末/周中", time: "09:00-10:00" },
+            { venue: "东校园健身房", type: "周末/周中", time: "10:00-11:00" },
+            { venue: "东校园健身房", type: "周末/周中", time: "11:00-12:00" },
+            { venue: "东校园健身房", type: "周末/周中", time: "14:00-15:00" },
+            { venue: "东校园健身房", type: "周末/周中", time: "15:00-16:00" },
+            { venue: "东校园健身房", type: "周末/周中", time: "16:00-17:00" },
+            { venue: "东校园健身房", type: "周末/周中", time: "17:00-18:00" },
+            { venue: "东校园健身房", type: "周末/周中", time: "18:00-19:00" },
+            { venue: "东校园健身房", type: "周末/周中", time: "19:00-20:00" },
+            { venue: "东校园健身房", type: "周末/周中", time: "20:00-21:00" },
+            { venue: "东校园健身房", type: "周末/周中", time: "21:00-22:00" },
+            // 北校园
+            { venue: "北校园游泳池", type: "周末/周中", time: "06:30-08:00" },
+            { venue: "北校园游泳池", type: "周末/周中", time: "16:30-18:00" },
+            { venue: "北校园游泳池", type: "周末/周中", time: "19:30-21:00" },
+            { venue: "北校园健身房", type: "周末/周中", time: "08:00-10:00" },
+            { venue: "北校园健身房", type: "周末/周中", time: "10:00-12:00" },
+            { venue: "北校园健身房", type: "周末/周中", time: "14:00-16:00" },
+            { venue: "北校园健身房", type: "周末/周中", time: "16:00-18:00" },
+            { venue: "北校园健身房", type: "周末/周中", time: "18:00-20:00" },
+            { venue: "北校园健身房", type: "周末/周中", time: "20:00-22:00" },
+            // 深圳校区
+            { venue: "深圳校区游泳池", type: "周末/周中", time: "06:30-08:00" },
+            { venue: "深圳校区游泳池", type: "周末/周中", time: "16:30-18:00" },
+            { venue: "深圳校区游泳池", type: "周末/周中", time: "19:30-21:00" },
+            { venue: "深圳校区健身房", type: "周末/周中", time: "10:00-12:00" },
+            { venue: "深圳校区健身房", type: "周末/周中", time: "12:30-14:00" },
+            { venue: "深圳校区健身房", type: "周末/周中", time: "14:00-16:00" },
+            { venue: "深圳校区健身房", type: "周末/周中", time: "16:00-18:00" },
+            { venue: "深圳校区健身房", type: "周末/周中", time: "18:00-20:00" },
+            { venue: "深圳校区健身房", type: "周末/周中", time: "20:00-22:00" },
+            // 珠海校区
+            { venue: "珠海校区游泳池", type: "周末/周中", time: "06:30-08:00" },
+            { venue: "珠海校区游泳池", type: "周末/周中", time: "16:30-18:00" },
+            { venue: "珠海校区游泳池", type: "周末/周中", time: "19:30-21:00" },
+            { venue: "珠海校区健身房", type: "周末/周中", time: "14:00-16:00" },
+            { venue: "珠海校区健身房", type: "周末/周中", time: "16:00-18:00" },
+            { venue: "珠海校区健身房", type: "周末/周中", time: "18:00-20:00" },
+            { venue: "珠海校区健身房", type: "周末/周中", time: "20:00-22:00" }
+        ];
+
+        // 按校区分组
+        var campusGroups = {
+            "南校园": ["南校园新体育馆健身房", "南校园游泳池"],
+            "东校园": ["东校园游泳池", "东校园健身房"],
+            "北校园": ["北校园游泳池", "北校园健身房"],
+            "深圳校区": ["深圳校区游泳池", "深圳校区健身房"],
+            "珠海校区": ["珠海校区游泳池", "珠海校区健身房"]
+        };
+
+        var selectedVenue = null;
+        var selectedTime = null;
+        var selectedType = null;
+
+        function todayLocalStr() {
+            var d = new Date();
+            var y = d.getFullYear();
+            var m = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate()).padStart(2, '0');
+            return y + '-' + m + '-' + day;
+        }
+
+        // 初始化日期
+        var dateInput = document.getElementById('date-input');
+        dateInput.value = todayLocalStr();
+
+        // 从 URL 读取已选日期
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('date')) {
+            dateInput.value = params.get('date');
+        }
+
+        // 生成安全的 ID
+        function safeId(str) {
+            return str.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_');
+        }
+
+        // 渲染场次列表（按校区折叠栏分组）
+        function renderSessions(filterText) {
+            var venueMap = {};
+            sessions.forEach(function(s) {
+                if (!venueMap[s.venue]) {
+                    venueMap[s.venue] = [];
+                }
+                venueMap[s.venue].push(s);
+            });
+
+            var html = '';
+            for (var campus in campusGroups) {
+                var venues = campusGroups[campus];
+                var hasVisibleVenue = false;
+                var campusHtml = '';
+
+                venues.forEach(function(venue) {
+                    var sessionsList = venueMap[venue];
+                    if (!sessionsList) return;
+
+                    // 搜索过滤
+                    if (filterText && !venue.toLowerCase().includes(filterText.toLowerCase())) {
+                        return;
+                    }
+
+                    hasVisibleVenue = true;
+                    campusHtml += '<div class="venue-group">';
+                    campusHtml += '<div class="venue-name">' + venue + '</div>';
+                    campusHtml += '<div class="session-list">';
+                    sessionsList.forEach(function(s) {
+                        var id = 'sess_' + safeId(s.venue) + '_' + s.time.replace(/[:\-]/g, '');
+                        var isSelected = (selectedVenue === s.venue && selectedTime === s.time) ? 'selected' : '';
+                        campusHtml += '<div class="session-card ' + isSelected + '" id="' + id + '" ';
+                        campusHtml += 'onclick="selectSession(\'' + id + '\', \'' + s.venue.replace(/'/g, "\\'") + '\', \'' + s.time + '\', \'' + s.type + '\')">';
+                        campusHtml += s.time;
+                        campusHtml += '<span class="session-tag">' + s.type + '</span>';
+                        campusHtml += '</div>';
+                    });
+                    campusHtml += '</div></div>';
+                });
+
+                if (hasVisibleVenue) {
+                    var venueCount = venues.filter(function(v) {
+                        if (filterText && !v.toLowerCase().includes(filterText.toLowerCase())) return false;
+                        return venueMap[v] !== undefined;
+                    }).length;
+
+                    html += '<div class="accordion">';
+                    html += '<div class="accordion-header" onclick="toggleAccordion(this)">';
+                    html += '<span class="accordion-title">' + campus + '<span class="venue-count">(' + venueCount + '个场馆)</span></span>';
+                    html += '<svg class="accordion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+                    html += '</div>';
+                    html += '<div class="accordion-body">' + campusHtml + '</div>';
+                    html += '</div>';
+                }
+            }
+
+            document.getElementById('venue-list').innerHTML = html;
+        }
+
+        // 折叠栏切换
+        function toggleAccordion(header) {
+            var body = header.nextElementSibling;
+            var isOpen = body.classList.contains('open');
+
+            // 关闭所有其他折叠栏（手风琴效果，可选）
+            // document.querySelectorAll('.accordion-body.open').forEach(function(b) { b.classList.remove('open'); });
+            // document.querySelectorAll('.accordion-header.active').forEach(function(h) { h.classList.remove('active'); });
+
+            if (isOpen) {
+                body.classList.remove('open');
+                header.classList.remove('active');
+            } else {
+                body.classList.add('open');
+                header.classList.add('active');
+            }
+        }
+
+        function selectSession(id, venue, time, type) {
+            // 清除旧选中
+            var cards = document.querySelectorAll('.session-card');
+            cards.forEach(function(c) { c.classList.remove('selected'); });
+
+            // 设置新选中
+            var el = document.getElementById(id);
+            if (el) el.classList.add('selected');
+            selectedVenue = venue;
+            selectedTime = time;
+            selectedType = type;
+
+            // 更新已选信息展示
+            var infoEl = document.getElementById('selected-info');
+            document.getElementById('sel-venue').textContent = venue;
+            document.getElementById('sel-time').textContent = time;
+            infoEl.classList.add('show');
+
+            // 启用确认按钮
+            document.getElementById('confirm-btn').disabled = false;
+        }
+
+        function confirmBooking() {
+            var date = dateInput.value;
+            if (!date) {
+                alert('请选择预约日期');
+                return;
+            }
+            if (!selectedVenue || !selectedTime) {
+                alert('请选择场次');
+                return;
+            }
+            var url = '我的预约.html?date=' + encodeURIComponent(date)
+                + '&venue=' + encodeURIComponent(selectedVenue)
+                + '&time=' + encodeURIComponent(selectedTime)
+                + '&type=' + encodeURIComponent(selectedType);
+            window.location.href = url;
+        }
+
+        function goBack() {
+            window.location.href = 'index.html';
+        }
+
+        // 搜索功能
+        document.getElementById('venue-search').addEventListener('input', function(e) {
+            renderSessions(e.target.value.trim());
+        });
+
+        renderSessions();
+    </script>
+</body>
+</html>
