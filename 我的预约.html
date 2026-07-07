@@ -23,8 +23,50 @@
 <style>
 /* 预约确认卡片状态样式 */
 .card-item.booking-confirmed .card-icon { color: #006633; }
-.card-item.booking-confirmed .booking-title { font-weight: 700; }
-.card-item.booking-confirmed .card-info .v-chip { background: #e6f3ed !important; border-color: #006633; color: #006633; }
+.card-item.booking-confirmed .card-info .v-chip { border-color: #006633; color: #006633; }
+
+/* 悬浮层定位样式（本文件缺失 Vuetify 的 v-dialog 规则，此处补齐，取自「我的预约（点击1）.html」） */
+.booking-detail-overlay.v-overlay {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 201;
+}
+.booking-detail-overlay .v-overlay__scrim {
+    bottom: 0; left: 0; right: 0; top: 0;
+    height: 100%; width: 100%;
+    position: absolute;
+    cursor: pointer;
+}
+.booking-detail-content.v-dialog__content {
+    align-items: center;
+    display: flex;
+    height: 100%;
+    justify-content: center;
+    left: 0; top: 0;
+    pointer-events: none;
+    position: fixed;
+    width: 100%;
+}
+.booking-detail-content .v-dialog {
+    border-radius: 4px;
+    margin: 24px;
+    overflow-y: auto;
+    pointer-events: auto;
+    width: 100%;
+    outline: none;
+    box-shadow: 0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12);
+}
+.booking-detail-content .v-card__title { padding: 16px 24px 10px; font-size: 1.25rem; font-weight: 500; letter-spacing: .0125em; }
+.booking-detail-content .headline { font-size: 1.5rem !important; font-weight: 400; line-height: 2rem; }
+.booking-detail-content .v-card__text { padding: 0 24px 20px; font-size: .875rem; color: rgba(0,0,0,.6); }
+.booking-detail-content .v-card__actions { padding: 8px 16px; align-items: center; display: flex; }
+.booking-detail-content .v-card__actions .spacer { flex-grow: 1; }
+.booking-detail-content .v-card.v-sheet { background-color: #fff; color: rgba(0,0,0,.87); }
+/* 主按钮白色文字（本文件缺失该规则，取自「我的预约（点击1）.html」） */
+.booking-detail-content .v-btn:not(.v-btn--outlined).primary { color: #fff; }
 </style>
 
 <script>
@@ -91,16 +133,176 @@
         // 更新 card-details
         var detailsDiv = card.querySelector('.card-details > div');
         if (detailsDiv) {
+            // 时段格式统一为「18:00 - 20:00」（短横两侧加空格），与标准页一致
+            var timeText = time.replace(/\s*-\s*/, ' - ');
             var locationText = venue === '东校园游泳池' ? venue : venue + '-场地1';
             detailsDiv.innerHTML = '<i aria-hidden="true" class="v-icon notranslate mr-2 mdi mdi-calendar theme--light" style="font-size:16px"></i> '
                 + formattedDate
                 + ' <i aria-hidden="true" class="v-icon notranslate ml-2 mr-1 mdi mdi-clock-outline theme--light" style="font-size:16px"></i> '
-                + time
+                + timeText
                 + ' <i aria-hidden="true" class="v-icon notranslate ml-2 mr-1 mdi mdi-map-marker theme--light" style="font-size:16px"></i> '
                 + locationText;
         }
 
         // 保持状态标签原样不动
+    }
+})();
+</script>
+
+<script>
+// === 点击预约卡片弹出详情悬浮层 ===
+(function() {
+    // 挂载点：优先挂到 v-application 内部，保证 Vuetify 样式生效
+    function getMountRoot() {
+        return document.querySelector('.v-application') || document.body;
+    }
+
+    // 从卡片 DOM 中解析各字段
+    function parseCard(card) {
+        function txt(sel) {
+            var el = card.querySelector(sel);
+            return el ? el.textContent.trim() : '';
+        }
+
+        var venue = txt('.booking-title');
+
+        // 预约编号 + 费用，形如 "#RB-J06LEE8XIL 运动时 ¥5"
+        var idLine = txt('.booking-id');
+        var bookingId = '';
+        var fee = '';
+        var idMatch = idLine.match(/#\S+/);
+        if (idMatch) {
+            bookingId = idMatch[0];
+            fee = idLine.replace(bookingId, '').trim();
+        } else {
+            fee = idLine;
+        }
+
+        // 详情行：日期 / 时段 / 场地名称（图标之间以文本分隔）
+        var date = '';
+        var time = '';
+        var location = '';
+        var detailsDiv = card.querySelector('.card-details > div');
+        if (detailsDiv) {
+            // 按图标切分文本节点：日历→日期，时钟→时段，定位→场地
+            var parts = [];
+            detailsDiv.childNodes.forEach(function(node) {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    var t = node.textContent.trim();
+                    if (t) parts.push(t);
+                }
+            });
+            // parts 依次为 [日期, 时段, 场地名称]
+            date = parts[0] || '';
+            time = parts[1] || '';
+            location = parts[2] || '';
+        }
+
+        return {
+            venue: venue,
+            bookingId: bookingId,
+            fee: fee,
+            date: date,
+            time: time,
+            location: location
+        };
+    }
+
+    // 构建悬浮层（代码从「我的预约（点击1）.html」原样抠出，仅替换显示内容）
+    function buildDialog(data) {
+        // 背景遮罩层（v-overlay，结构与原文件一致）
+        var overlay = document.createElement('div');
+        overlay.className = 'v-overlay v-overlay--active theme--dark booking-detail-overlay';
+        overlay.setAttribute('style', 'z-index:201');
+        overlay.innerHTML =
+            '<div class="v-overlay__scrim" style="opacity:0.46;background-color:rgb(33,33,33);border-color:rgb(33,33,33)"></div>' +
+            '<div class="v-overlay__content"></div>';
+
+        // 弹窗内容层（v-dialog__content > v-dialog，代码与原文件完全一致）
+        var content = document.createElement('div');
+        content.className = 'v-dialog__content v-dialog__content--active booking-detail-content';
+        content.setAttribute('style', 'z-index:202');
+        content.innerHTML =
+            '<div class="v-dialog v-dialog--active" tabindex="0" style="transform-origin:center center;max-width:500px">' +
+                '<div data-v-578881b0="" class="v-card v-sheet theme--light">' +
+                    '<div data-v-578881b0="" class="v-card__title">' +
+                        '<span data-v-578881b0="" class="headline">我的预约</span>' +
+                    '</div>' +
+                    '<div data-v-578881b0="" class="v-card__text">' +
+                        '<div data-v-578881b0="" class="mb-2"> 场馆： ' + data.venue + ' </div>' +
+                        '<div data-v-578881b0="" class="mb-2"> 预约日期： ' + data.date + ' </div>' +
+                        '<div data-v-578881b0="" class="mb-2"> 预约时段： ' + data.time + ' </div>' +
+                        '<div data-v-578881b0="" class="mb-2"> 场地名称： ' + data.location + ' </div>' +
+                        '<div data-v-578881b0="" class="mb-2"> 预约编号： ' + data.bookingId + ' </div>' +
+                        '<div data-v-578881b0="" class="mb-2"> 费用：' + data.fee + ' </div>' +
+                    '</div>' +
+                    '<div data-v-578881b0="" class="v-card__actions">' +
+                        '<div data-v-578881b0="" class="spacer"></div>' +
+                        '<button data-v-578881b0="" type="button" class="v-btn v-btn--is-elevated v-btn--has-bg theme--light v-size--default primary">' +
+                            '<span class="v-btn__content">确认</span>' +
+                        '</button>' +
+                    '</div>' +
+                '</div>';
+
+        function close() {
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            if (content.parentNode) content.parentNode.removeChild(content);
+        }
+
+        // 关闭按钮（确认）
+        var confirmBtn = content.querySelector('.v-card__actions button');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                close();
+            });
+        }
+
+        // 点击遮罩关闭
+        var scrim = overlay.querySelector('.v-overlay__scrim');
+        if (scrim) scrim.addEventListener('click', close);
+
+        return { overlay: overlay, content: content };
+    }
+
+    function openDialog(card) {
+        var data = parseCard(card);
+        var parts = buildDialog(data);
+        var root = getMountRoot();
+        root.appendChild(parts.overlay);
+        root.appendChild(parts.content);
+    }
+
+    // 事件委托：点击卡片弹出悬浮层；删除“取消”按钮
+    function init() {
+        var cardList = document.querySelector('.card-list');
+        if (!cardList) return;
+
+        // 删除所有卡片中的“取消”按钮
+        cardList.querySelectorAll('.card-actions button').forEach(function(btn) {
+            if (btn.textContent.trim() === '取消') {
+                btn.parentNode.removeChild(btn);
+            }
+        });
+
+        // 事件委托绑定卡片点击
+        cardList.addEventListener('click', function(e) {
+            var card = e.target.closest('.card-item');
+            if (!card || !cardList.contains(card)) return;
+            openDialog(card);
+        });
+
+        // 卡片看起来可点击
+        cardList.querySelectorAll('.card-item').forEach(function(card) {
+            card.style.cursor = 'pointer';
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
     }
 })();
 </script>
